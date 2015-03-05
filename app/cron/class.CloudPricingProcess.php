@@ -38,7 +38,9 @@ class CloudPricingProcess implements \Scalr\System\Pcntl\ProcessInterface
 
         $urls = array(
             'https://a0.awsstatic.com/pricing/1/ec2/linux-od.min.js',
-        	'https://a0.awsstatic.com/pricing/1/ec2/mswin-od.min.js',
+            'https://a0.awsstatic.com/pricing/1/ec2/mswin-od.min.js',
+            'https://a0.awsstatic.com/pricing/1/ec2/previous-generation/linux-od.min.js',
+            'https://a0.awsstatic.com/pricing/1/ec2/previous-generation/mswin-od.min.js',
         );
 
         $mapping = [
@@ -64,6 +66,8 @@ class CloudPricingProcess implements \Scalr\System\Pcntl\ProcessInterface
 
         foreach ($urls as $link) {
             $json = trim(preg_replace('/^.+?callback\((.+?)\);\s*$/sU', '\\1', file_get_contents($link)));
+            
+            $os = (strpos($link, 'linux') !== false ? PriceEntity::OS_LINUX : PriceEntity::OS_WINDOWS);
 
             $data = json_decode(preg_replace('/(\w+):/', '"\\1":', $json));
 
@@ -115,8 +119,6 @@ class CloudPricingProcess implements \Scalr\System\Pcntl\ProcessInterface
                         $needUpdate = false;
                         foreach ($it->sizes as $sz) {
                             foreach ($sz->valueColumns as $v) {
-                                $os = ($v->name == 'linux' ? PriceEntity::OS_LINUX : PriceEntity::OS_WINDOWS);
-
                                 if (!is_numeric($v->prices->USD) || $v->prices->USD < 0.000001) {
                                     continue;
                                 }
